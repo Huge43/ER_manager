@@ -1,0 +1,257 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const { google } = require('googleapis');
+const path = require('path');
+const sql = require('mssql'); // <-- NOUVEAU : On importe le bon outil SQL
+
+const app = express();
+app.use(cors());
+app.use(express.json()); 
+
+// ==========================================
+// CONFIGURATION DE LA BASE DE DONNÉES (MSSQL)
+// ==========================================
+const config = {
+    server: process.env.DB_SERVER,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    options: {
+        encrypt: true,
+        trustServerCertificate: true
+    }
+};
+
+// ==========================================
+// CONFIGURATION GOOGLE FORMS API
+// ==========================================
+const FORM_ID = '1vIi8ZGGpu7q-Pcs8JXJ2qlGvE8Sgh-t6KKU8uELgxKs'; 
+
+async function getMemberFromForm(searchEmail) {
+    const auth = new google.auth.GoogleAuth({
+        keyFile: 'credentials.json',
+        scopes: [
+            'https://www.googleapis.com/auth/forms.responses.readonly',
+            'https://www.googleapis.com/auth/forms.body.readonly' 
+        ],
+    });
+    const client = await auth.getClient();
+    const forms = google.forms({ version: 'v1', auth: client });
+
+    try {
+        const formStructure = await forms.forms.get({ formId: FORM_ID });
+        const questionMap = {}; 
+        
+        formStructure.data.items.forEach(item => {
+            if (item.questionItem && item.questionItem.question) {
+                questionMap[item.questionItem.question.questionId] = item.title.toLowerCase();
+            }
+        });
+
+        const res = await forms.forms.responses.list({ formId: FORM_ID });
+        const responses = res.data.responses;
+
+        if (!responses) return null;
+
+        for (const response of responses) {
+            let memberData = { 
+                email: '', phone: '', fullName: '', age: '', sexe: '', niveau: '', goals: '', dob: '', profil: '',
+                premiereFois: '', affiliation: '', activitesPratiquees: '', loisirs: '', 
+                activitesER: '', limites: '', vaincreLimites: '', 
+                engagementActif: '', engagementObjectifs: '', acceptationRetrait: '' 
+            };
+            
+            if (response.respondentEmail) memberData.email = response.respondentEmail;
+
+            if (response.answers) {
+                for (const [questionId, answerObj] of Object.entries(response.answers)) {
+                    const title = questionMap[questionId] || "";
+                    const value = answerObj.textAnswers?.answers[0]?.value || "";
+
+                    if (title.includes('e-mail') || title.includes('email') || title.includes('courriel')) memberData.email = value;
+                    if (title.includes('téléphone') || title.includes('cellulaire') || title.includes('phone') || title.includes('numéro')) memberData.phone = value;
+                    if (title.includes('nom') || title.includes('complet')) memberData.fullName = value;
+                    if (title === 'âge' || title === 'age' || title === 'votre âge') memberData.age = value;
+                    if (title.includes('sexe') || title.includes('genre')) memberData.sexe = value;
+                    if (title.includes('niveau')) memberData.niveau = value;
+                    if (title.includes('objectif')) memberData.goals = value;
+                    if (title.includes('date') || title.includes('naissance')) memberData.dob = value;
+                    if (title.includes('profil')) memberData.profil = value;
+                    
+                    if (title.includes('première fois')) memberData.premiereFois = value;
+                    if (title.includes('affiliation')) memberData.affiliation = value;
+                    if (title.includes('activités physiques que vous pratiquez')) memberData.activitesPratiquees = value;
+                    if (title.includes('sportives ou de loisirs')) memberData.loisirs = value;
+                    if (title.includes('cet été') || title.includes('ce printemps')) memberData.activitesER = value; 
+                    if (title.includes('limite actuellement') || title.includes('limites actuellement')) memberData.limites = value;
+                    if (title.includes('vaincre ces limites')) memberData.vaincreLimites = value;
+
+                    if (title.includes('participer activement')) memberData.engagementActif = value;
+                    if (title.includes('partager mes objectifs')) memberData.engagementObjectifs = value;
+                    if (title.includes('retiré sans préavis')) memberData.acceptationRetrait = value;
+                }
+            }
+
+            if (memberData.email.toLowerCase() === searchEmail.toLowerCase()) {
+                return memberData;
+            }
+        }
+    } catch (error) {
+        console.error("Erreur API Forms:", error);
+    }
+    return null;
+}
+
+// ==========================================
+// MIDDLEWARE : SÉCURITÉ
+// ==========================================
+const verifierToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ message: 'Accès refusé. Token manquant.' });
+
+    jwt.verify(token, process.env.JWT_SECRET || 'SECRET_KEY', (err, decoded) => {
+        if (err) return res.status(403).json({ message: 'Token invalide ou expiré.' });
+        req.user = decoded; 
+        next();
+    });
+};
+
+// ==========================================
+// ROUTE 1 : CONNEXION SANS MOT DE PASSE
+// ==========================================
+app.post('/api/auth/login', async (req, res) => {
+    const { email, phone } = req.body;
+
+    try {
+        const memberData = await getMemberFromForm(email);
+
+        if (!memberData) {
+            return res.status(404).json({ message: "Aucune candidature trouvée avec cet e-mail dans nos registres." });
+        }
+
+        const formPhone = memberData.phone ? memberData.phone.replace(/\D/g, '') : '';
+        const inputPhone = phone.replace(/\D/g, '');
+
+        if (formPhone !== inputPhone) {
+            return res.status(401).json({ message: "Le numéro de téléphone ne correspond pas au dossier." });
+        }
+
+        const token = jwt.sign(
+            { email: email, userId: 1 }, 
+            process.env.JWT_SECRET || 'SECRET_KEY',
+            { expiresIn: '2h' }
+        );
+
+        res.json({ message: 'Connexion réussie', token: token });
+
+    } catch (error) {
+        console.error("Erreur de connexion :", error);
+        res.status(500).json({ message: "Erreur lors de la vérification de l'identité." });
+    }
+});
+
+// ==========================================
+// ROUTE 2 : RÉCUPÉRER LE PROFIL
+// ==========================================
+app.get('/api/profil/import', verifierToken, async (req, res) => {
+    const userEmail = req.user.email;
+
+    try {
+        // La nouvelle logique : On vérifie si l'utilisateur existe dans SQL en premier
+        const pool = await sql.connect(config);
+        const result = await pool.request()
+            .input('email', sql.VarChar, userEmail)
+            .query('SELECT * FROM Candidatures WHERE email = @email');
+
+        if (result.recordset.length > 0) {
+            // Le membre est déjà dans la base de données SQL !
+            res.json({ source: 'sql', data: result.recordset[0] });
+        } else {
+            // Le membre n'est pas dans SQL, on va chercher dans Google Forms
+            const formData = await getMemberFromForm(userEmail);
+            if (formData) {
+                res.status(200).json({ source: 'Google Forms', data: formData });
+            } else {
+                res.status(404).json({ message: 'Aucune donnée trouvée.' });
+            }
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'importation :", error);
+        res.status(500).json({ message: "Erreur lors de la récupération." });
+    }
+});
+
+// ==========================================
+// ROUTE 3 : ENREGISTREMENT / MISE À JOUR (UPSERT)
+// ==========================================
+app.post('/api/profil/confirmation', verifierToken, async (req, res) => {
+    try {
+        const { 
+            fullName, sexe, age, dob, email, phone, 
+            niveau, goals, profil 
+        } = req.body;
+
+        const pool = await sql.connect(config); 
+        const request = pool.request();
+        
+        request.input('email', sql.VarChar, email);
+        request.input('nom_complet', sql.VarChar, fullName);
+        request.input('sexe', sql.VarChar, sexe);
+        request.input('age', sql.Int, age ? parseInt(age) : null); 
+        request.input('date_naissance', sql.Date, dob ? dob : null); 
+        request.input('telephone', sql.VarChar, phone);
+        request.input('niveau_sportif', sql.VarChar, niveau);
+        request.input('objectifs_trimestre', sql.Text, goals);
+        request.input('profil_type', sql.VarChar, profil);
+
+        const query = `
+            IF EXISTS (SELECT 1 FROM Candidatures WHERE email = @email)
+            BEGIN
+                UPDATE Candidatures
+                SET 
+                    nom_complet = @nom_complet,
+                    sexe = @sexe,
+                    age = @age,
+                    date_naissance = @date_naissance,
+                    telephone = @telephone,
+                    niveau_sportif = @niveau_sportif,
+                    objectifs_trimestre = @objectifs_trimestre,
+                    profil_type = @profil_type,
+                    date_mise_a_jour = GETDATE()
+                WHERE email = @email;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO Candidatures (
+                    user_id, email, nom_complet, sexe, age, date_naissance, 
+                    telephone, niveau_sportif, objectifs_trimestre, profil_type, 
+                    statut, date_soumission, date_mise_a_jour
+                )
+                VALUES (
+                    1, @email, @nom_complet, @sexe, @age, @date_naissance, 
+                    @telephone, @niveau_sportif, @objectifs_trimestre, @profil_type, 
+                    'Confirmé', GETDATE(), GETDATE()
+                );
+            END
+        `;
+
+        await request.query(query);
+        res.status(200).json({ message: "Profil enregistré avec succès dans la base de données !" });
+
+    } catch (error) {
+        console.error("Erreur SQL :", error);
+        res.status(500).json({ message: "Erreur lors de la sauvegarde du profil." });
+    }
+});
+
+// ==========================================
+// DÉMARRAGE DU SERVEUR
+// ==========================================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Serveur démarré sur http://localhost:${PORT}`);
+});

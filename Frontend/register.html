@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portail Elite Runners</title>
+    <link rel="stylesheet" href="styles2.css">
+</head>
+<body>
+
+<div class="form-container">
+    <div class="form-header">
+        <h1 class="form-title">Elite Runners</h1>
+    </div>
+    
+    <form id="registrationForm">
+        
+        <div class="form-section">
+            <h2 class="section-title">1. Informations Personnelles</h2>
+            <div class="input-grid">
+                
+                <div class="input-group full-width">
+                    <label for="fullName">Prénom et Nom <span class="required">*</span></label>
+                    <input type="text" id="fullName" placeholder="Votre réponse" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Sexe <span class="required">*</span></label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="sexe" value="Homme" required> Homme</label>
+                        <label class="radio-label"><input type="radio" name="sexe" value="Femme" required> Femme</label>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="age">Âge <span class="required">*</span></label>
+                    <input type="number" id="age" placeholder="Votre âge" min="16" max="99" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="dob">Date de naissance <span class="required">*</span></label>
+                    <input type="date" id="dob" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="email">Votre courriel <span class="required">*</span></label>
+                    <input type="email" id="email" placeholder="adresse@email.com" required>
+                </div>
+
+                <div class="input-group full-width">
+                    <label for="phone">Votre numéro de téléphone <span class="required">*</span></label>
+                    <input type="tel" id="phone" placeholder="+1 234 567 8900" required>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="section-title">2. Profil Sportif</h2>
+            <div class="input-grid">
+                
+                <div class="input-group full-width">
+                    <label for="firstTime">Est-ce votre première fois à participer dans le groupe Elite Runners? Si oui, comment avez-vous entendu parler de la communauté ER? <span class="required">*</span></label>
+                    <textarea id="firstTime" rows="3" placeholder="Votre réponse" required></textarea>
+                </div>
+
+                <div class="input-group full-width">
+                    <label for="gymAffiliation">Avez-vous une affiliation à une salle d'entraînement? Si oui, laquelle? <span class="required">*</span></label>
+                    <textarea id="gymAffiliation" rows="2" placeholder="Votre réponse" required></textarea>
+                </div>
+
+                <div class="input-group full-width">
+                    <label>Quel est votre niveau d'activité physique global? <span class="required">*</span></label>
+                    <div class="radio-group vertical">
+                        <label class="radio-label"><input type="radio" name="niveau" value="Débutant" required> Débutant</label>
+                        <label class="radio-label"><input type="radio" name="niveau" value="Intermédiaire" required> Intermédiaire</label>
+                        <label class="radio-label"><input type="radio" name="niveau" value="Avancé" required> Avancé</label>
+                    </div>
+                </div>
+
+                <div class="input-group full-width">
+                    <label for="activitiesPratice">Quelles sont les activités physiques que vous pratiquez ? <span class="required">*</span></label>
+                    <textarea id="activitiesPratice" rows="3" placeholder="Votre réponse" required></textarea>
+                </div>
+
+                <div class="input-group full-width">
+                    <label for="activitiesInterest">Quels types d'activités sportives ou de loisirs vous intéressent ?</label>
+                    <p class="helper-text">Par exemple : paintball, trampoline, soccer, basket, tennis etc.</p>
+                    <textarea id="activitiesInterest" rows="2" placeholder="Votre réponse"></textarea>
+                </div>
+
+                <div class="input-group full-width">
+                    <label for="springActivities">Quelles sont les activités que vous aimeriez faire cet été avec ER? <span class="required">*</span></label>
+                    <textarea id="springActivities" rows="2" placeholder="Votre réponse" required></textarea>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="section-title">3. Objectifs & État d'esprit</h2>
+            <div class="input-grid">
+                
+                <div class="input-group full-width">
+                    <label for="goals">Quels sont vos objectifs pour le prochain trimestre ? <span class="required">*</span></label>
+                    <p class="helper-text">Il est nécessaire de décrire les objectifs ou projets que tu envisages de réaliser au cours de ce trimestre. Ceux-ci peuvent être liés à l'éducation, à la formation continue, à l'adoption de nouvelles habitudes de vie, à la vie professionnelle, le sport etc. Nous avons besoin de ces informations afin de pouvoir vous fournir des outils adaptés ou vous mettre en contact avec des personnes ayant les mêmes centres d'intérêt pour vous apporter de l'aide.</p>
+                    <textarea id="goals" rows="4" placeholder="Détaillez vos objectifs ici..." required></textarea>
+                </div>
+
+                <div class="input-group full-width">
+                    <label for="limits">Qu'est-ce qui vous limite actuellement? (Ex : système de pensée, situation personnelle, etc.)</label>
+                    <textarea id="limits" rows="3" placeholder="Votre réponse"></textarea>
+                </div>
+
+                <div class="input-group full-width">
+                    <label for="strengths">Qu'est-ce que vous faites pour vaincre ces limites? Points forts (Ex : personne manuelle stratégie, ambition, créativité, etc.)</label>
+                    <textarea id="strengths" rows="3" placeholder="Votre réponse"></textarea>
+                </div>
+
+                <div class="input-group full-width">
+                    <label>Quel profil êtes-vous ? <span class="required">*</span></label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="profil" value="Fonceur" required> Fonceur</label>
+                        <label class="radio-label"><input type="radio" name="profil" value="Modéré" required> Modéré</label>
+                        <label class="radio-label"><input type="radio" name="profil" value="Réticent" required> Réticent</label>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="section-title">4. Engagements</h2>
+            <div class="input-grid">
+                
+                <div class="input-group full-width checkbox-wrapper">
+                    <label class="checkbox-label">
+                        <input type="checkbox" required>
+                        <span>Je m'engage à participer activement au sein du groupe. <span class="required">*</span></span>
+                    </label>
+                </div>
+
+                <div class="input-group full-width checkbox-wrapper">
+                    <label class="checkbox-label">
+                        <input type="checkbox" required>
+                        <span>Je m'engage à partager mes objectifs pour le trimestre dans le groupe WhatsApp lors du début du trimestre ou de mon entrée dans le groupe. <span class="required">*</span></span>
+                    </label>
+                </div>
+
+                <div class="input-group full-width checkbox-wrapper">
+                    <label class="checkbox-label">
+                        <input type="checkbox" required>
+                        <span>J’accepte que si je ne participe pas à minimalement 2 événements de la communauté, je pourrais être retiré sans préavis. <span class="required">*</span></span>
+                    </label>
+                </div>
+
+            </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="submit-btn">Soumettre ma candidature ➔</button>
+    </form>
+</div>
+
+<script src="register.js"></script>
+</body>
+</html>

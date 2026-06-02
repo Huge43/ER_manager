@@ -1,0 +1,210 @@
+/* Importation de la police Syne */
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400..800&display=swap");
+
+/* Réinitialisation */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Syne', sans-serif;
+}
+
+body {
+    background-color: #0A0A0A; /* Noir très profond */
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Permet le scroll pour un long formulaire */
+    min-height: 100vh;
+    padding: 3rem 1rem;
+    font-weight: 500;
+}
+
+.form-container {
+    background-color: #121212; /* Légèrement plus clair que le fond */
+    padding: 3rem;
+    border-radius: 16px;
+    border: 1px solid #2A2A2A;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.form-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+}
+
+.form-section {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #2A2A2A;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    color: #ffffff;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Grille à 2 colonnes par défaut pour ce long formulaire */
+.input-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.full-width {
+    grid-column: 1 / -1; /* Prend toute la largeur */
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    color: #e0e0e0;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.required {
+    color: #ff4757; /* Rouge pour les astérisques */
+}
+
+.helper-text {
+    font-size: 0.8rem;
+    color: #888888;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+input[type="number"],
+textarea {
+    background-color: #1A1A1A;
+    border: 1px solid #333333;
+    color: #ffffff;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+input::placeholder, textarea::placeholder {
+    color: #555555;
+}
+
+input:focus, textarea:focus {
+    outline: none;
+    border-color: #666666;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+}
+
+/* Fix pour le calendrier en dark mode */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+/* Boutons Radio et Checkboxes */
+.radio-group {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.radio-group.vertical {
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.radio-label, .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: #cccccc;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* Accent color pour colorer nativement les radios/checkbox en blanc */
+input[type="radio"], input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #ffffff; 
+    cursor: pointer;
+}
+
+.checkbox-wrapper {
+    background-color: #1A1A1A;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #333333;
+}
+
+.submit-btn {
+    width: 100%;
+    background-color: #ffffff;
+    color: #000000;
+    border: none;
+    padding: 1.2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.submit-btn:hover {
+    background-color: #e6e6e6;
+    transform: translateY(-2px);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .input-grid {
+        grid-template-columns: 1fr; /* 1 seule colonne sur mobile */
+    }
+    .form-container {
+        padding: 2rem 1.5rem;
+    }
+    .radio-group {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Succès - Elite Runners</title>
+    <style>
+        /*=============== GOOGLE FONTS ===============*/
+        @import url("https://fonts.googleapis.com/css2?family=Syne:wght@400..800&display=swap");
+
+        /*=============== VARIABLES CSS (Identiques à ton thème) ===============*/
+        :root {
+            --first-color: hsl(0, 0%, 45%);
+            --first-color-alt: hsl(0, 2%, 24%);
+            --title-color: hsl(0, 0%, 95%);
+            --text-color: hsl(0, 0%, 55%);
+            --body-color: hsl(0, 0%, 4%);
+            --container-color: hsl(0, 0%, 8%);
+            --body-font: "Syne", sans-serif;
+            --success-color: #4ade80; /* Vert de validation */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--body-color);
+            color: var(--text-color);
+            font-family: var(--body-font);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-weight: 600;
+        }
+
+        .success-card {
+            background-color: var(--container-color);
+            width: 100%;
+            max-width: 450px;
+            padding: 3.5rem 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 24px hsla(263, 45%, 2%, .5);
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            fill: var(--success-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .success-card h2 {
+            font-size: 1.8rem;
+            color: var(--title-color);
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .success-card p {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+        }
+
+        .payment-box {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--first-color);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 2.5rem;
+            text-align: left;
+            /* 👇 AJOUT : Force le texte trop long à revenir à la ligne */
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .payment-box p {
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+        }
+
+        .payment-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .payment-box strong {
+            color: var(--title-color);
+            /* 👇 MODIFICATION : On contrôle l'épaisseur et on enlève l'espacement */
+            font-weight: 600; 
+            letter-spacing: normal;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="success-card">
+        <svg class="success-icon" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        
+        <h2>Félicitations !</h2>
+        <p>Votre réinscription a été effectuée avec succès et votre dossier est à jour.</p>
+        
+        <div class="payment-box">
+            <p>Il ne reste plus qu'à finaliser votre inscription en effectuant votre virement :</p>
+            <p>📧 Virement au : <strong>teameliterunners@gmail.com</strong></p>
+            <p>🔒 Mot de passe : <strong>ER2026</strong></p>
+        </div>
+
+        <a href="login.html" class="btn-home">Retour à l'accueil</a>
+    </div>
+
+</body>
+</html>
