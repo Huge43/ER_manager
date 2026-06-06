@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Elite Runners</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Syne:wght@400..800&display=swap");
+
+        :root {
+            --first-color: hsl(0, 0%, 45%);
+            --first-color-alt: hsl(0, 2%, 24%);
+            --title-color: hsl(0, 0%, 95%);
+            --text-color: hsl(0, 0%, 55%);
+            --body-color: hsl(0, 0%, 4%);
+            --container-color: hsl(0, 0%, 8%);
+            --body-font: "Syne", sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--body-color);
+            color: var(--text-color);
+            font-family: var(--body-font);
+            padding: 2rem;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-title {
+            color: var(--title-color);
+            font-size: 2rem;
+        }
+
+        .table-container {
+            background-color: var(--container-color);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 24px hsla(263, 45%, 2%, .5);
+            overflow-x: auto; /* Permet de scroller horizontalement si le tableau est trop large */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            min-width: 1000px; /* Force une largeur minimum pour ne pas écraser les colonnes */
+        }
+
+        th, td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--first-color-alt);
+        }
+
+        th {
+            color: var(--title-color);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        td {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #ccc;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            background-color: var(--first-color);
+            color: var(--title-color);
+            padding: 0.3rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+        }
+
+        /* =========================================
+           STYLE DE LA MODALE (FENÊTRE DÉTAILS)
+        ========================================= */
+        tbody tr {
+            cursor: pointer; /* Change la souris en main pour montrer que c'est cliquable */
+            transition: background-color 0.2s ease;
+        }
+
+        .modal {
+            display: none; /* Invisible par défaut */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* Fond sombre transparent */
+            backdrop-filter: blur(4px); /* Effet verre dépoli premium */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--container-color);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            width: 90%;
+            max-width: 650px;
+            max-height: 85vh; /* Pour ne pas dépasser de l'écran */
+            overflow-y: auto; /* Permet de scroller dans la modale */
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            color: var(--first-color);
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: #ff6b6b;
+        }
+
+        .modal-content h2 {
+            color: var(--title-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--first-color-alt);
+        }
+
+        .detail-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .detail-group strong {
+            display: block;
+            color: var(--title-color);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.4rem;
+        }
+
+        .detail-group p {
+            color: #ccc;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 1rem;
+            border-radius: 0.8rem;
+            border: 1px solid var(--first-color-alt);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Base de Données Membres</h1>
+        <a href="login.html" style="color: var(--title-color); text-decoration: none;">Déconnexion</a>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom Complet</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
+                    <th>Âge</th>
+                    <th>Sexe</th>
+                    <th>Niveau</th>
+                    <th>Profil</th>
+                    <th>Objectifs</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody id="membersTableBody">
+                </tbody>
+        </table>
+    </div>
+
+    <div id="memberModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModal">&times;</span>
+            <h2 id="modalName">Nom du Membre</h2>
+            <div class="modal-body" id="modalBody">
+                </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

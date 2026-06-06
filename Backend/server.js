@@ -161,15 +161,44 @@ app.get('/api/profil/import', verifierToken, async (req, res) => {
     const userEmail = req.user.email;
 
     try {
-        // La nouvelle logique : On vérifie si l'utilisateur existe dans SQL en premier
         const pool = await sql.connect(config);
         const result = await pool.request()
             .input('email', sql.VarChar, userEmail)
             .query('SELECT * FROM Candidatures WHERE email = @email');
 
         if (result.recordset.length > 0) {
-            // Le membre est déjà dans la base de données SQL !
-            res.json({ source: 'sql', data: result.recordset[0] });
+            // Le membre est dans SQL !
+            const dbUser = result.recordset[0];
+
+            // Astuce de pro : Formater la date SQL pour que le HTML (type="date") la comprenne (YYYY-MM-DD)
+            let dateFormatee = '';
+            if (dbUser.date_naissance) {
+                const d = new Date(dbUser.date_naissance);
+                dateFormatee = d.toISOString().split('T')[0];
+            }
+
+            // LE TRADUCTEUR : On fait correspondre SQL -> Frontend
+            const mappedData = {
+                email: dbUser.email,
+                fullName: dbUser.nom_complet,
+                sexe: dbUser.sexe,
+                age: dbUser.age,
+                dob: dateFormatee,
+                phone: dbUser.telephone,
+                niveau: dbUser.niveau_sportif,
+                goals: dbUser.objectifs_trimestre,
+                profil: dbUser.profil_type,
+                premiereFois: dbUser.premiere_fois,
+                affiliation: dbUser.affiliation_salle,
+                activitesPratiquees: dbUser.activites_pratiquees,
+                loisirs: dbUser.loisirs_interets,
+                activitesER: dbUser.activites_ete_er,
+                limites: dbUser.limites_actuelles,
+                vaincreLimites: dbUser.vaincre_limites
+            };
+
+            res.json({ source: 'sql', data: mappedData });
+            
         } else {
             // Le membre n'est pas dans SQL, on va chercher dans Google Forms
             const formData = await getMemberFromForm(userEmail);
@@ -190,14 +219,16 @@ app.get('/api/profil/import', verifierToken, async (req, res) => {
 // ==========================================
 app.post('/api/profil/confirmation', verifierToken, async (req, res) => {
     try {
+        // 1. On attrape TOUTES les données du frontend
         const { 
-            fullName, sexe, age, dob, email, phone, 
-            niveau, goals, profil 
+            fullName, sexe, age, dob, email, phone, niveau, goals, profil,
+            firstTime, gymAffiliation, activitiesPratice, activitiesInterest, springActivities, limits, strengths
         } = req.body;
 
         const pool = await sql.connect(config); 
         const request = pool.request();
         
+        // 2. On prépare TOUTES les variables pour SQL
         request.input('email', sql.VarChar, email);
         request.input('nom_complet', sql.VarChar, fullName);
         request.input('sexe', sql.VarChar, sexe);
@@ -207,7 +238,17 @@ app.post('/api/profil/confirmation', verifierToken, async (req, res) => {
         request.input('niveau_sportif', sql.VarChar, niveau);
         request.input('objectifs_trimestre', sql.Text, goals);
         request.input('profil_type', sql.VarChar, profil);
+        
+        // Les nouveaux champs
+        request.input('premiere_fois', sql.NVarChar, firstTime || '');
+        request.input('affiliation_salle', sql.NVarChar, gymAffiliation || '');
+        request.input('activites_pratiquees', sql.NVarChar, activitiesPratice || '');
+        request.input('loisirs_interets', sql.NVarChar, activitiesInterest || '');
+        request.input('activites_ete_er', sql.NVarChar, springActivities || '');
+        request.input('limites_actuelles', sql.NVarChar, limits || '');
+        request.input('vaincre_limites', sql.NVarChar, strengths || '');
 
+        // 3. LA REQUÊTE GÉANTE
         const query = `
             IF EXISTS (SELECT 1 FROM Candidatures WHERE email = @email)
             BEGIN
@@ -221,6 +262,13 @@ app.post('/api/profil/confirmation', verifierToken, async (req, res) => {
                     niveau_sportif = @niveau_sportif,
                     objectifs_trimestre = @objectifs_trimestre,
                     profil_type = @profil_type,
+                    premiere_fois = @premiere_fois,
+                    affiliation_salle = @affiliation_salle,
+                    activites_pratiquees = @activites_pratiquees,
+                    loisirs_interets = @loisirs_interets,
+                    activites_ete_er = @activites_ete_er,
+                    limites_actuelles = @limites_actuelles,
+                    vaincre_limites = @vaincre_limites,
                     date_mise_a_jour = GETDATE()
                 WHERE email = @email;
             END
@@ -229,11 +277,15 @@ app.post('/api/profil/confirmation', verifierToken, async (req, res) => {
                 INSERT INTO Candidatures (
                     user_id, email, nom_complet, sexe, age, date_naissance, 
                     telephone, niveau_sportif, objectifs_trimestre, profil_type, 
+                    premiere_fois, affiliation_salle, activites_pratiquees, loisirs_interets,
+                    activites_ete_er, limites_actuelles, vaincre_limites,
                     statut, date_soumission, date_mise_a_jour
                 )
                 VALUES (
                     1, @email, @nom_complet, @sexe, @age, @date_naissance, 
                     @telephone, @niveau_sportif, @objectifs_trimestre, @profil_type, 
+                    @premiere_fois, @affiliation_salle, @activites_pratiquees, @loisirs_interets,
+                    @activites_ete_er, @limites_actuelles, @vaincre_limites,
                     'Confirmé', GETDATE(), GETDATE()
                 );
             END
@@ -245,6 +297,22 @@ app.post('/api/profil/confirmation', verifierToken, async (req, res) => {
     } catch (error) {
         console.error("Erreur SQL :", error);
         res.status(500).json({ message: "Erreur lors de la sauvegarde du profil." });
+    }
+});
+
+// ==========================================
+// ROUTE 4 : TABLEAU DE BORD (ADMIN)
+// ==========================================
+app.get('/api/admin/membres', verifierToken, async (req, res) => {
+    try {
+        const pool = await sql.connect(config);
+        // On récupère tout le monde, trié par date de mise à jour (les plus récents en premier)
+        const result = await pool.request().query('SELECT * FROM Candidatures ORDER BY date_mise_a_jour DESC');
+        
+        res.status(200).json(result.recordset);
+    } catch (error) {
+        console.error("Erreur SQL (Admin) :", error);
+        res.status(500).json({ message: "Erreur lors de la récupération des membres." });
     }
 });
 
