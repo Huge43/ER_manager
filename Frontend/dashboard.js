@@ -40,16 +40,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <td><span style="color: #4ade80;">${membre.statut || 'Actif'}</span></td>
                 `;
                 
-                // NOUVEAU : On ajoute un écouteur de clic sur chaque ligne !
+                // On ajoute un écouteur de clic sur chaque ligne !
                 tr.addEventListener('click', () => afficherDetailsMembre(membre));
                 
                 tableBody.appendChild(tr);
             });
 
+        } else if (response.status === 403) {
+            // ❌ LE SERVEUR DIT NON (Le membre n'est pas dans la liste VIP)
+            alert("Accès restreint. Seule la direction Elite Runners peut consulter cette page.");
+            window.location.href = 'register.html'; 
+            
         } else {
+            // ❌ LE TOKEN EST INVALIDE (Pas connecté ou expiré)
             alert("Accès refusé. Veuillez vous reconnecter.");
             window.location.href = 'login.html';
         }
+        
     } catch (error) {
         tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #ff6b6b;">Erreur de connexion au serveur.</td></tr>`;
     }

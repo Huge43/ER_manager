@@ -9,6 +9,7 @@ const sql = require('mssql'); // <-- NOUVEAU : On importe le bon outil SQL
 const app = express();
 app.use(cors());
 app.use(express.json()); 
+app.use(express.static(path.join(__dirname, '../Frontend')));
 
 // ==========================================
 // CONFIGURATION DE LA BASE DE DONNÉES (MSSQL)
@@ -119,6 +120,48 @@ const verifierToken = (req, res, next) => {
         next();
     });
 };
+
+// ==========================================
+// MIDDLEWARE : VÉRIFICATION ADMINISTRATEUR
+// ==========================================
+const ADMIN_EMAILS = [
+    'teameliterunners@gmail.com', 
+    'glodieilunga5@gmail.com'
+];
+
+const verifierAdmin = (req, res, next) => {
+    // NOUVEAU : On vérifie si le Token a le rôle "admin"
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Accès refusé. Privilèges d'administrateur requis." });
+    }
+    next();
+};
+
+// ==========================================
+// ROUTE : CONNEXION ADMINISTRATEUR (Avec Mot de passe)
+// ==========================================
+app.post('/api/auth/admin-login', (req, res) => {
+    const { email, password } = req.body;
+
+    // 1. On vérifie si l'e-mail est dans la liste VIP
+    if (!ADMIN_EMAILS.includes(email.toLowerCase())) {
+        return res.status(403).json({ message: "Cet e-mail n'a pas les droits d'administration." });
+    }
+
+    // 2. On vérifie si le mot de passe correspond à celui du fichier .env
+    if (password !== process.env.ADMIN_PASSWORD) {
+        return res.status(401).json({ message: "Mot de passe administrateur incorrect." });
+    }
+
+    // 3. Succès ! On génère un Token VIP avec le rôle "admin"
+    const token = jwt.sign(
+        { email: email, role: 'admin' }, 
+        process.env.JWT_SECRET || 'SECRET_KEY',
+        { expiresIn: '4h' } // Le token admin expire après 4 heures
+    );
+
+    res.json({ message: 'Connexion Admin réussie', token: token });
+});
 
 // ==========================================
 // ROUTE 1 : CONNEXION SANS MOT DE PASSE
@@ -303,7 +346,7 @@ app.post('/api/profil/confirmation', verifierToken, async (req, res) => {
 // ==========================================
 // ROUTE 4 : TABLEAU DE BORD (ADMIN)
 // ==========================================
-app.get('/api/admin/membres', verifierToken, async (req, res) => {
+app.get('/api/admin/membres', verifierToken, verifierAdmin, async (req, res) => {
     try {
         const pool = await sql.connect(config);
         // On récupère tout le monde, trié par date de mise à jour (les plus récents en premier)
