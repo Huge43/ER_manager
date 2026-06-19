@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('adminPassword').value;
 
         try {
-            const response = await fetch('http://localhost:3000/api/auth/admin-login', {
+            const response = await fetch('https://er-manager.onrender.com/api/auth/admin-login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })

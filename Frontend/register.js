@@ -10,14 +10,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Redirection si l'utilisateur n'est pas connecté
         if (!token) {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
             return;
         }
 
         // On interroge le serveur
-        const response = await fetch('http://localhost:3000/api/profil/import', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const response = await fetch('https://er-manager-api.onrender.com/api/profil/import', {
+    headers: { 'Authorization': `Bearer ${token}` }
+});
 
         if (response.ok) {
             const result = await response.json();
@@ -126,8 +126,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
 
             // Envoi au Backend
-            const response = await fetch('http://localhost:3000/api/profil/confirmation', {
-                method: 'POST',
+            const response = await fetch('https://er-manager-api.onrender.com/api/profil/confirmation', {
+            method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`

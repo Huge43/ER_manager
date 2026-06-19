@@ -7,21 +7,31 @@ const path = require('path');
 const sql = require('mssql'); // <-- NOUVEAU : On importe le bon outil SQL
 
 const app = express();
-app.use(cors());
+
+// ==========================================
+// CONFIGURATION CORS (Sécurité pour Netlify)
+// ==========================================
+app.use(cors({
+    origin: 'https://elite-runners-portail.netlify.app', // L'adresse exacte de ton frontend
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Actions autorisées
+    allowedHeaders: ['Content-Type', 'Authorization'] // En-têtes autorisés (pour le Token)
+}));
+
 app.use(express.json()); 
 app.use(express.static(path.join(__dirname, '../Frontend')));
 
 // ==========================================
 // CONFIGURATION DE LA BASE DE DONNÉES (MSSQL)
 // ==========================================
+
 const config = {
-    server: process.env.DB_SERVER,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
+    server: process.env.DB_SERVER,
     database: process.env.DB_NAME,
     options: {
-        encrypt: true,
-        trustServerCertificate: true
+        encrypt: true, // Requis par les serveurs cloud
+        trustServerCertificate: true // 👇 LA LIGNE MAGIQUE POUR SOMEE 👇
     }
 };
 

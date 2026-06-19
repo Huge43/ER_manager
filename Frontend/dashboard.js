@@ -9,12 +9,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modalBody = document.getElementById('modalBody');
 
     if (!token) {
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
     }
 
     try {
-        const response = await fetch('http://localhost:3000/api/admin/membres', {
+        const response = await fetch('https://er-manager.onrender.com/api/admin/membres', {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             // ❌ LE TOKEN EST INVALIDE (Pas connecté ou expiré)
             alert("Accès refusé. Veuillez vous reconnecter.");
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
         
     } catch (error) {
