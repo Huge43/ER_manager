@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // On interroge le serveur
-        const response = await fetch('https://er-manager-api.onrender.com/api/profil/import', {
+        const response = await fetch(`${API_URL}/api/profil/import`, {
     headers: { 'Authorization': `Bearer ${token}` }
 });
 
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
 
             // Envoi au Backend
-            const response = await fetch('https://er-manager-api.onrender.com/api/profil/confirmation', {
+            const response = await fetch(`${API_URL}/api/profil/confirmation`, {
             method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

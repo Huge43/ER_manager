@@ -8,6 +8,13 @@ const sql = require('mssql'); // <-- NOUVEAU : On importe le bon outil SQL
 
 const app = express();
 
+// Le secret JWT est obligatoire : sans lui, n'importe qui pourrait forger un token admin
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    console.error("ERREUR : la variable d'environnement JWT_SECRET n'est pas définie.");
+    process.exit(1);
+}
+
 // ==========================================
 // CONFIGURATION CORS (Sécurité pour Netlify)
 // ==========================================
@@ -124,7 +131,7 @@ const verifierToken = (req, res, next) => {
 
     if (!token) return res.status(401).json({ message: 'Accès refusé. Token manquant.' });
 
-    jwt.verify(token, process.env.JWT_SECRET || 'SECRET_KEY', (err, decoded) => {
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) return res.status(403).json({ message: 'Token invalide ou expiré.' });
         req.user = decoded; 
         next();
@@ -151,7 +158,11 @@ const verifierAdmin = (req, res, next) => {
 // ROUTE : CONNEXION ADMINISTRATEUR (Avec Mot de passe)
 // ==========================================
 app.post('/api/auth/admin-login', (req, res) => {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
+
+    if (typeof email !== 'string' || typeof password !== 'string') {
+        return res.status(400).json({ message: "E-mail et mot de passe requis." });
+    }
 
     // 1. On vérifie si l'e-mail est dans la liste VIP
     if (!ADMIN_EMAILS.includes(email.toLowerCase())) {
@@ -159,14 +170,14 @@ app.post('/api/auth/admin-login', (req, res) => {
     }
 
     // 2. On vérifie si le mot de passe correspond à celui du fichier .env
-    if (password !== process.env.ADMIN_PASSWORD) {
+    if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) {
         return res.status(401).json({ message: "Mot de passe administrateur incorrect." });
     }
 
     // 3. Succès ! On génère un Token VIP avec le rôle "admin"
     const token = jwt.sign(
-        { email: email, role: 'admin' }, 
-        process.env.JWT_SECRET || 'SECRET_KEY',
+        { email: email.toLowerCase(), role: 'admin' },
+        JWT_SECRET,
         { expiresIn: '4h' } // Le token admin expire après 4 heures
     );
 
@@ -177,7 +188,11 @@ app.post('/api/auth/admin-login', (req, res) => {
 // ROUTE 1 : CONNEXION SANS MOT DE PASSE
 // ==========================================
 app.post('/api/auth/login', async (req, res) => {
-    const { email, phone } = req.body;
+    const { email, phone } = req.body || {};
+
+    if (typeof email !== 'string' || typeof phone !== 'string' || !email || !phone) {
+        return res.status(400).json({ message: "E-mail et numéro de téléphone requis." });
+    }
 
     try {
         const memberData = await getMemberFromForm(email);
@@ -194,8 +209,8 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         const token = jwt.sign(
-            { email: email, userId: 1 }, 
-            process.env.JWT_SECRET || 'SECRET_KEY',
+            { email: email.toLowerCase(), userId: 1 },
+            JWT_SECRET,
             { expiresIn: '2h' }
         );
 
@@ -273,8 +288,10 @@ app.get('/api/profil/import', verifierToken, async (req, res) => {
 app.post('/api/profil/confirmation', verifierToken, async (req, res) => {
     try {
         // 1. On attrape TOUTES les données du frontend
-        const { 
-            fullName, sexe, age, dob, email, phone, niveau, goals, profil,
+        // L'e-mail vient du token (et non du formulaire) : un membre ne peut modifier que SON profil
+        const email = req.user.email;
+        const {
+            fullName, sexe, age, dob, phone, niveau, goals, profil,
             firstTime, gymAffiliation, activitiesPratice, activitiesInterest, springActivities, limits, strengths
         } = req.body;
 

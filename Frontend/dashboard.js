@@ -13,8 +13,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Déconnexion : on supprime le token avant de quitter la page
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+    });
+
     try {
-        const response = await fetch('https://er-manager.onrender.com/api/admin/membres', {
+        const response = await fetch(`${API_URL}/api/admin/membres`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -27,17 +32,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tr = document.createElement('tr');
                 
                 tr.innerHTML = `
-                    <td style="color: white;">${membre.nom_complet || '-'}</td>
-                    <td>${membre.email || '-'}</td>
-                    <td>${membre.telephone || '-'}</td>
-                    <td>${membre.age || '-'}</td>
-                    <td>${membre.sexe || '-'}</td>
-                    <td><span class="badge">${membre.niveau_sportif || '-'}</span></td>
-                    <td>${membre.profil_type || '-'}</td>
+                    <td style="color: white;">${escapeHtml(membre.nom_complet || '-')}</td>
+                    <td>${escapeHtml(membre.email || '-')}</td>
+                    <td>${escapeHtml(membre.telephone || '-')}</td>
+                    <td>${escapeHtml(membre.age || '-')}</td>
+                    <td>${escapeHtml(membre.sexe || '-')}</td>
+                    <td><span class="badge">${escapeHtml(membre.niveau_sportif || '-')}</span></td>
+                    <td>${escapeHtml(membre.profil_type || '-')}</td>
                     <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        ${membre.objectifs_trimestre || '-'}
+                        ${escapeHtml(membre.objectifs_trimestre || '-')}
                     </td>
-                    <td><span style="color: #4ade80;">${membre.statut || 'Actif'}</span></td>
+                    <td><span style="color: #4ade80;">${escapeHtml(membre.statut || 'Actif')}</span></td>
                 `;
                 
                 // On ajoute un écouteur de clic sur chaque ligne !
@@ -72,35 +77,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         modalBody.innerHTML = `
             <div class="detail-group">
                 <strong>Objectifs du trimestre</strong>
-                <p>${membre.objectifs_trimestre || 'Non spécifié'}</p>
+                <p>${escapeHtml(membre.objectifs_trimestre || 'Non spécifié')}</p>
             </div>
             <div class="detail-group">
                 <strong>Première fois chez ER ?</strong>
-                <p>${membre.premiere_fois || 'Non spécifié'}</p>
+                <p>${escapeHtml(membre.premiere_fois || 'Non spécifié')}</p>
             </div>
             <div class="detail-group">
                 <strong>Affiliation à une salle</strong>
-                <p>${membre.affiliation_salle || 'Non spécifié'}</p>
+                <p>${escapeHtml(membre.affiliation_salle || 'Non spécifié')}</p>
             </div>
             <div class="detail-group">
                 <strong>Activités physiques pratiquées</strong>
-                <p>${membre.activites_pratiquees || 'Non spécifié'}</p>
+                <p>${escapeHtml(membre.activites_pratiquees || 'Non spécifié')}</p>
             </div>
             <div class="detail-group">
                 <strong>Loisirs et Intérêts sportifs</strong>
-                <p>${membre.loisirs_interets || 'Non spécifié'}</p>
+                <p>${escapeHtml(membre.loisirs_interets || 'Non spécifié')}</p>
             </div>
             <div class="detail-group">
                 <strong>Activités prévues ce printemps/été</strong>
-                <p>${membre.activites_ete_er || 'Non spécifié'}</p>
+                <p>${escapeHtml(membre.activites_ete_er || 'Non spécifié')}</p>
             </div>
             <div class="detail-group">
                 <strong>Limites actuelles</strong>
-                <p>${membre.limites_actuelles || 'Non spécifié'}</p>
+                <p>${escapeHtml(membre.limites_actuelles || 'Non spécifié')}</p>
             </div>
             <div class="detail-group">
                 <strong>Comment comptez-vous vaincre ces limites ?</strong>
-                <p>${membre.vaincre_limites || 'Non spécifié'}</p>
+                <p>${escapeHtml(membre.vaincre_limites || 'Non spécifié')}</p>
             </div>
             <div style="font-size: 0.8rem; color: var(--first-color); margin-top: 2rem; text-align: center;">
                 Dossier mis à jour le : ${new Date(membre.date_mise_a_jour).toLocaleString('fr-CA')}

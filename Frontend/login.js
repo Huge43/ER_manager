@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // On appelle la route de login de notre serveur Node.js
-            const response = await fetch('https://er-manager.onrender.com/api/auth/login', {
+            const response = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email, phone: phone }) 
