@@ -82,6 +82,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 console.log("Données importées avec succès !");
             }
+        } else if (response.status === 404) {
+            // Nouveau membre : aucune donnée à importer, on pré-remplit l'e-mail et le téléphone du token
+            const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+            document.getElementById('email').value = payload.email || '';
+            document.getElementById('phone').value = payload.phone || '';
         }
     } catch (error) {
         console.error("Erreur lors de l'importation :", error);

@@ -118,6 +118,8 @@ async function getMemberFromForm(searchEmail) {
         }
     } catch (error) {
         console.error("Erreur API Forms:", error);
+        // On propage l'erreur : "Google indisponible" ne doit jamais être confondu avec "membre inconnu"
+        throw error;
     }
     return null;
 }
@@ -195,10 +197,17 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     try {
-        const memberData = await getMemberFromForm(email);
+        // D'abord la base SQL (membres déjà confirmés ou nouveaux inscrits), sinon le Google Form
+        const pool = await sql.connect(config);
+        const dbResult = await pool.request()
+            .input('email', sql.VarChar, email)
+            .query('SELECT telephone FROM Candidatures WHERE email = @email');
+        const memberData = dbResult.recordset[0]
+            ? { phone: dbResult.recordset[0].telephone }
+            : await getMemberFromForm(email);
 
         if (!memberData) {
-            return res.status(404).json({ message: "Aucune candidature trouvée avec cet e-mail dans nos registres." });
+            return res.status(404).json({ message: "Aucune candidature trouvée avec cet e-mail. Nouveau membre ? Cliquez sur « Première inscription »." });
         }
 
         const formPhone = memberData.phone ? memberData.phone.replace(/\D/g, '') : '';
@@ -219,6 +228,41 @@ app.post('/api/auth/login', async (req, res) => {
     } catch (error) {
         console.error("Erreur de connexion :", error);
         res.status(500).json({ message: "Erreur lors de la vérification de l'identité." });
+    }
+});
+
+// ==========================================
+// ROUTE 1 BIS : INSCRIPTION D'UN NOUVEAU MEMBRE (absent du Google Form)
+// ==========================================
+// ponytail: aucune vérification que l'e-mail appartient bien à la personne ; ajouter un code envoyé par e-mail si l'usurpation devient un problème
+app.post('/api/auth/inscription', async (req, res) => {
+    const { email, phone } = req.body || {};
+
+    if (typeof email !== 'string' || typeof phone !== 'string' || !email || !phone) {
+        return res.status(400).json({ message: "E-mail et numéro de téléphone requis." });
+    }
+
+    try {
+        const pool = await sql.connect(config);
+        const dbResult = await pool.request()
+            .input('email', sql.VarChar, email)
+            .query('SELECT 1 FROM Candidatures WHERE email = @email');
+
+        if (dbResult.recordset.length > 0 || await getMemberFromForm(email)) {
+            return res.status(409).json({ message: "Cet e-mail est déjà inscrit. Utilisez « Se connecter »." });
+        }
+
+        const token = jwt.sign(
+            { email: email.toLowerCase(), phone: phone, userId: 1, nouveau: true },
+            JWT_SECRET,
+            { expiresIn: '2h' }
+        );
+
+        res.json({ message: 'Inscription démarrée', token: token });
+
+    } catch (error) {
+        console.error("Erreur d'inscription :", error);
+        res.status(500).json({ message: "Erreur lors de l'inscription." });
     }
 });
 
@@ -317,6 +361,7 @@ app.post('/api/profil/confirmation', verifierToken, async (req, res) => {
         request.input('activites_ete_er', sql.NVarChar, springActivities || '');
         request.input('limites_actuelles', sql.NVarChar, limits || '');
         request.input('vaincre_limites', sql.NVarChar, strengths || '');
+        request.input('statut', sql.NVarChar, req.user.nouveau ? 'Nouveau' : 'Confirmé');
 
         // 3. LA REQUÊTE GÉANTE
         const query = `
@@ -356,7 +401,7 @@ app.post('/api/profil/confirmation', verifierToken, async (req, res) => {
                     @telephone, @niveau_sportif, @objectifs_trimestre, @profil_type, 
                     @premiere_fois, @affiliation_salle, @activites_pratiquees, @loisirs_interets,
                     @activites_ete_er, @limites_actuelles, @vaincre_limites,
-                    'Confirmé', GETDATE(), GETDATE()
+                    @statut, GETDATE(), GETDATE()
                 );
             END
         `;
@@ -383,6 +428,64 @@ app.get('/api/admin/membres', verifierToken, verifierAdmin, async (req, res) => 
     } catch (error) {
         console.error("Erreur SQL (Admin) :", error);
         res.status(500).json({ message: "Erreur lors de la récupération des membres." });
+    }
+});
+
+// ==========================================
+// ROUTE 5 : AJOUTER UN MEMBRE (ADMIN)
+// ==========================================
+// L'admin crée la fiche minimale ; le membre se connecte ensuite (e-mail + téléphone) et complète son profil
+app.post('/api/admin/membres', verifierToken, verifierAdmin, async (req, res) => {
+    const { fullName, email, phone } = req.body || {};
+
+    if (typeof email !== 'string' || typeof phone !== 'string' || !email || !phone) {
+        return res.status(400).json({ message: "E-mail et numéro de téléphone requis." });
+    }
+
+    try {
+        const pool = await sql.connect(config);
+        const result = await pool.request()
+            .input('email', sql.VarChar, email.toLowerCase())
+            .input('nom_complet', sql.VarChar, fullName || '')
+            .input('telephone', sql.VarChar, phone)
+            .query(`
+                IF EXISTS (SELECT 1 FROM Candidatures WHERE email = @email)
+                    SELECT 0 AS cree
+                ELSE
+                BEGIN
+                    INSERT INTO Candidatures (user_id, email, nom_complet, telephone, statut, date_soumission, date_mise_a_jour)
+                    VALUES (1, @email, @nom_complet, @telephone, 'Nouveau', GETDATE(), GETDATE());
+                    SELECT 1 AS cree
+                END
+            `);
+
+        if (!result.recordset[0].cree) {
+            return res.status(409).json({ message: "Un membre avec cet e-mail existe déjà." });
+        }
+        res.status(201).json({ message: "Membre ajouté." });
+    } catch (error) {
+        console.error("Erreur SQL (Ajout admin) :", error);
+        res.status(500).json({ message: "Erreur lors de l'ajout du membre." });
+    }
+});
+
+// ==========================================
+// ROUTE 6 : SUPPRIMER UN MEMBRE (ADMIN)
+// ==========================================
+app.delete('/api/admin/membres/:email', verifierToken, verifierAdmin, async (req, res) => {
+    try {
+        const pool = await sql.connect(config);
+        const result = await pool.request()
+            .input('email', sql.VarChar, req.params.email)
+            .query('DELETE FROM Candidatures WHERE email = @email');
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ message: "Membre introuvable." });
+        }
+        res.status(200).json({ message: "Membre supprimé." });
+    } catch (error) {
+        console.error("Erreur SQL (Suppression admin) :", error);
+        res.status(500).json({ message: "Erreur lors de la suppression du membre." });
     }
 });
 

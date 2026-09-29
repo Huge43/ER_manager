@@ -32,21 +32,47 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tr = document.createElement('tr');
                 
                 tr.innerHTML = `
-                    <td style="color: white;">${escapeHtml(membre.nom_complet || '-')}</td>
-                    <td>${escapeHtml(membre.email || '-')}</td>
-                    <td>${escapeHtml(membre.telephone || '-')}</td>
-                    <td>${escapeHtml(membre.age || '-')}</td>
-                    <td>${escapeHtml(membre.sexe || '-')}</td>
-                    <td><span class="badge">${escapeHtml(membre.niveau_sportif || '-')}</span></td>
-                    <td>${escapeHtml(membre.profil_type || '-')}</td>
-                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <td data-label="Nom" style="color: white;">${escapeHtml(membre.nom_complet || '-')}</td>
+                    <td data-label="Email">${escapeHtml(membre.email || '-')}</td>
+                    <td data-label="Téléphone">${escapeHtml(membre.telephone || '-')}</td>
+                    <td data-label="Âge">${escapeHtml(membre.age || '-')}</td>
+                    <td data-label="Sexe">${escapeHtml(membre.sexe || '-')}</td>
+                    <td data-label="Niveau"><span class="badge">${escapeHtml(membre.niveau_sportif || '-')}</span></td>
+                    <td data-label="Profil">${escapeHtml(membre.profil_type || '-')}</td>
+                    <td data-label="Objectifs" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         ${escapeHtml(membre.objectifs_trimestre || '-')}
                     </td>
-                    <td><span style="color: #4ade80;">${escapeHtml(membre.statut || 'Actif')}</span></td>
+                    <td data-label="Statut"><span style="color: #4ade80;">${escapeHtml(membre.statut || 'Actif')}</span></td>
+                    <td>
+                        <button class="dossier-btn">Dossier complet</button>
+                        <button class="delete-btn" style="background: none; border: 1px solid #ff6b6b; color: #ff6b6b; border-radius: 0.5rem; padding: 0.3rem 0.7rem; cursor: pointer;">Supprimer</button>
+                    </td>
                 `;
-                
+
                 // On ajoute un écouteur de clic sur chaque ligne !
-                tr.addEventListener('click', () => afficherDetailsMembre(membre));
+                // Sur mobile : un toucher déplie/replie la carte ; sur ordinateur : ouvre le dossier
+                tr.addEventListener('click', () => {
+                    if (matchMedia('(max-width: 768px)').matches) tr.classList.toggle('open');
+                    else afficherDetailsMembre(membre);
+                });
+
+                tr.querySelector('.dossier-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    afficherDetailsMembre(membre);
+                });
+
+                // Suppression (sans ouvrir la modale de la ligne)
+                tr.querySelector('.delete-btn').addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (!confirm(`Supprimer définitivement ${membre.nom_complet || membre.email} ?`)) return;
+
+                    const res = await fetch(`${API_URL}/api/admin/membres/${encodeURIComponent(membre.email)}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) tr.remove();
+                    else alert('Erreur : ' + (await res.json()).message);
+                });
                 
                 tableBody.appendChild(tr);
             });
@@ -63,8 +89,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
     } catch (error) {
-        tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #ff6b6b;">Erreur de connexion au serveur.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ff6b6b;">Erreur de connexion au serveur.</td></tr>`;
     }
+
+    // ==========================================
+    // AJOUT D'UN MEMBRE
+    // ==========================================
+    document.getElementById('addMemberForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const res = await fetch(`${API_URL}/api/admin/membres`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+                fullName: document.getElementById('newName').value,
+                email: document.getElementById('newEmail').value,
+                phone: document.getElementById('newPhone').value
+            })
+        });
+        if (res.ok) location.reload();
+        else alert('Erreur : ' + (await res.json()).message);
+    });
 
     // ==========================================
     // LOGIQUE DE LA MODALE

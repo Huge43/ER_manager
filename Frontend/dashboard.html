@@ -162,6 +162,106 @@
             border-radius: 0.8rem;
             border: 1px solid var(--first-color-alt);
         }
+
+        /* =========================================
+           FORMULAIRE D'AJOUT
+        ========================================= */
+        #addMemberForm {
+            display: flex;
+            flex-wrap: wrap; /* Passe à la ligne tout seul sur petit écran */
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        #addMemberForm > * {
+            flex: 1 1 180px;
+            padding: 0.6rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--first-color);
+            background: var(--container-color);
+            color: var(--title-color);
+            font-family: var(--body-font);
+            font-size: 1rem; /* 16px minimum : évite le zoom automatique sur iPhone */
+        }
+
+        #addMemberForm button {
+            background: var(--first-color);
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Sur ordinateur, cliquer la ligne ouvre déjà le dossier */
+        .dossier-btn { display: none; }
+
+        /* =========================================
+           MOBILE : le tableau devient une liste de cartes
+        ========================================= */
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+
+            .dashboard-header { flex-wrap: wrap; gap: 0.5rem; }
+            .dashboard-title { font-size: 1.4rem; }
+
+            .table-container { padding: 0; background: none; box-shadow: none; }
+
+            table, tbody { display: block; min-width: 0; }
+            thead { display: none; }
+
+            tbody tr {
+                display: block;
+                background-color: var(--container-color);
+                border-radius: 1rem;
+                padding: 0.5rem 1rem;
+                margin-bottom: 1rem;
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                gap: 1rem;
+                padding: 0.6rem 0;
+                text-align: right;
+                max-width: none !important;   /* annule le style en ligne de la colonne Objectifs */
+                white-space: normal !important;
+                overflow-wrap: anywhere;       /* les longs e-mails ne débordent pas */
+            }
+
+            td:last-child { border-bottom: none; justify-content: flex-end; }
+
+            /* Étiquette de la colonne, reprise de l'attribut data-label */
+            td[data-label]::before {
+                content: attr(data-label);
+                color: var(--title-color);
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                text-align: left;
+                flex-shrink: 0;
+            }
+
+            /* Carte repliée : seul le nom est visible, un toucher la déplie */
+            tbody tr:not(.open) td:not(:first-child) { display: none; }
+            tbody tr:not(.open) td:first-child { border-bottom: none; }
+
+            td:first-child { font-size: 1.05rem; text-align: left; }
+            td:first-child::before { content: none; }
+            td:first-child::after { content: '▾'; color: var(--first-color); }
+            tr.open td:first-child::after { content: '▴'; }
+
+            .dossier-btn {
+                display: inline-block;
+                background: none;
+                border: 1px solid var(--first-color);
+                color: var(--title-color);
+                border-radius: 0.5rem;
+                padding: 0.3rem 0.7rem;
+                cursor: pointer;
+                font-family: var(--body-font);
+            }
+
+            .modal-content { width: 95%; padding: 1.5rem; max-height: 90vh; }
+            .close-btn { top: 1rem; right: 1rem; }
+        }
     </style>
 </head>
 <body>
@@ -170,6 +270,13 @@
         <h1 class="dashboard-title">Base de Données Membres</h1>
         <a href="index.html" id="logoutBtn" style="color: var(--title-color); text-decoration: none;">Déconnexion</a>
     </div>
+
+    <form id="addMemberForm">
+        <input id="newName" placeholder="Prénom et nom">
+        <input id="newEmail" type="email" placeholder="E-mail" required>
+        <input id="newPhone" type="tel" placeholder="Téléphone" required>
+        <button type="submit">+ Ajouter un membre</button>
+    </form>
 
     <div class="table-container">
         <table>
@@ -184,6 +291,7 @@
                     <th>Profil</th>
                     <th>Objectifs</th>
                     <th>Statut</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="membersTableBody">
